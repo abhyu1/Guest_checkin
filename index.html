@@ -28,18 +28,19 @@
     <div class="container" id="adminContainer" style="display: none;">
         <h2>Manage Guest List</h2>
         <input type="text" id="guestName" placeholder="Enter Guest Name">
-        
-        <!-- Separate buttons for Add and Remove -->
         <button onclick="addGuest()">Add Guest</button>
-        <button onclick="removeGuest()">Remove Guest</button>
 
-        <h2>Search for Guest</h2>
+        <h2>Guests Currently in Venue</h2>
+        <ul id="currentGuests"></ul>
+
+        <h2>Search Guest</h2>
         <input type="text" id="searchName" placeholder="Enter Guest Name to Search">
         <button onclick="searchGuest()">Search</button>
         <p id="searchResult"></p>
 
-        <h2>Currently in Venue</h2>
-        <ul id="guestList"></ul>
+        <h2>Remove Guest</h2>
+        <input type="text" id="removeName" placeholder="Enter Guest Name to Remove">
+        <button onclick="removeGuest()">Remove Guest</button>
 
         <button onclick="adminLogout()">Logout</button>
     </div>
@@ -48,19 +49,19 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-        import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getDatabase, ref, set, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
         // Firebase configuration
         const firebaseConfig = {
           apiKey: "AIzaSyB48zrln_P9SEIngjf58Yopkpstsac6uFM",
           authDomain: "guest-list-8ee99.firebaseapp.com",
-          databaseURL: "https://guest-list-8ee99-default-rtdb.asia-southeast1.firebasedatabase.app",
+          databaseURL: "https://guest-list-8ee99-default-rtdb.asia-southeast1.firebasedatabase.app",  
           projectId: "guest-list-8ee99",
           storageBucket: "guest-list-8ee99.appspot.com",
           messagingSenderId: "907423161396",
           appId: "1:907423161396:web:52b2733d12a89a4cdfbe61",
           measurementId: "G-2199LVL65J"
-        };
+        };       
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -75,7 +76,7 @@
                 .then(() => {
                     document.getElementById("loginContainer").style.display = "none";  // Hide login
                     document.getElementById("adminContainer").style.display = "block";  // Show admin controls
-                    updateCurrentGuests();
+                    loadCurrentGuests();
                 })
                 .catch(error => alert(error.message));
         }
@@ -88,80 +89,70 @@
             });
         }
 
-        // Add Guest (Automatically checked-in)
+        // Add Guest (Automatically checkedIn = true)
         window.addGuest = function() {
             const guestName = document.getElementById("guestName").value;
             if (guestName) {
-                set(ref(database, "guests/" + guestName), { checkedIn: true })
-                    .then(() => {
-                        document.getElementById("guestName").value = "";  // Clear input field
-                        updateCurrentGuests();
-                    });
+                set(ref(database, "guests/" + guestName), { checkedIn: true }); // Automatically checked in
+                document.getElementById("guestName").value = "";
+                loadCurrentGuests();
             }
         }
 
-        // Remove Guest from Venue
-        window.removeGuest = function() {
-            const guestName = document.getElementById("guestName").value;
-            if (guestName) {
-                remove(ref(database, "guests/" + guestName))
-                    .then(() => {
-                        document.getElementById("guestName").value = "";  // Clear input field
-                        updateCurrentGuests();
-                    });
-            }
-        }
-
-        // Search Guest
-        window.searchGuest = function() {
-            const guestName = document.getElementById("searchName").value;
-            const resultMessage = document.getElementById("searchResult");
-
-            if (guestName) {
-                get(ref(database, "guests/" + guestName)).then(snapshot => {
-                    if (snapshot.exists()) {
-                        const guestData = snapshot.val();
-                        if (guestData.checkedIn) {
-                            resultMessage.textContent = guestName + " is checked in.";
-                        } else {
-                            resultMessage.textContent = guestName + " is not checked in.";
-                        }
-                    } else {
-                        resultMessage.textContent = "Guest not found.";
-                    }
-                });
-            } else {
-                resultMessage.textContent = "Please enter a guest name.";
-            }
-        }
-
-        // Display the current guests in the venue
-        function updateCurrentGuests() {
-            const guestList = document.getElementById("guestList");
-            get(ref(database, "guests")).then(snapshot => {
-                guestList.innerHTML = "";
+        // Load Current Guests in Venue
+        function loadCurrentGuests() {
+            const currentGuests = document.getElementById("currentGuests");
+            currentGuests.innerHTML = "";
+            onValue(ref(database, "guests"), snapshot => {
                 snapshot.forEach(child => {
                     const guestName = child.key;
-                    const checkedIn = child.val().checkedIn;
-                    if (checkedIn) {
-                        const listItem = document.createElement("li");
-                        listItem.textContent = guestName;
-
-                        const removeBtn = document.createElement("button");
-                        removeBtn.textContent = "Remove";
-                        removeBtn.onclick = () => removeGuestFromVenue(guestName);
-
-                        listItem.appendChild(removeBtn);
-                        guestList.appendChild(listItem);
-                    }
+                    const guestData = child.val();
+                    const listItem = document.createElement("li");
+                    listItem.textContent = guestName;
+                    listItem.style.color = guestData.checkedIn ? "green" : "red"; // Green if checked in, red if not
+                    currentGuests.appendChild(listItem);
                 });
             });
         }
 
-        // Remove Guest from Venue (Separate remove logic)
-        function removeGuestFromVenue(guestName) {
-            remove(ref(database, "guests/" + guestName))
-                .then(() => updateCurrentGuests());  // Refresh the current guests list
+        // Search Guest
+        window.searchGuest = function() {
+            const searchName = document.getElementById("searchName").value.trim();
+            const searchResult = document.getElementById("searchResult");
+
+            if (searchName) {
+                get(ref(database, "guests/" + searchName)).then(snapshot => {
+                    if (snapshot.exists()) {
+                        const guestData = snapshot.val();
+                        if (guestData.checkedIn) {
+                            searchResult.textContent = `${searchName} is checked in.`;
+                            searchResult.style.color = "green"; // Green for checked-in guest
+                        } else {
+                            searchResult.textContent = `${searchName} is not checked in.`;
+                            searchResult.style.color = "red"; // Red for not checked-in guest
+                        }
+                    } else {
+                        searchResult.textContent = `${searchName} is not found in the database.`;
+                        searchResult.style.color = "red"; // Red for not found guest
+                    }
+                });
+            } else {
+                searchResult.textContent = "Please enter a name to search.";
+                searchResult.style.color = "black";
+            }
+        }
+
+        // Remove Guest
+        window.removeGuest = function() {
+            const removeName = document.getElementById("removeName").value.trim();
+            if (removeName) {
+                remove(ref(database, "guests/" + removeName)).then(() => {
+                    loadCurrentGuests(); // Refresh the list after removal
+                }).catch(error => {
+                    alert("Error removing guest: " + error.message);
+                });
+                document.getElementById("removeName").value = ""; // Clear the input field
+            }
         }
     </script>
 </body>
