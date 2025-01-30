@@ -109,7 +109,7 @@
                     const guestData = child.val();
                     const listItem = document.createElement("li");
                     listItem.textContent = guestName;
-                    listItem.style.color = guestData.checkedIn ? "green" : "red"; // Green if checked in, red if not
+                    listItem.style.color = "black"; // Always display in black for current guests
                     currentGuests.appendChild(listItem);
                 });
             });
