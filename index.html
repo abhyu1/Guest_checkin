@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Tracking System</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
@@ -14,24 +13,33 @@
     <header>
         <h1>Guest Tracking System</h1>
     </header>
-    
+
     <!-- Admin Login Section (Initially Visible) -->
-    <div class="container" id="adminContainer">
+    <div class="container" id="loginContainer">
         <h2>Admin Login</h2>
         <input type="email" id="adminEmail" placeholder="Enter Email">
         <input type="password" id="adminPassword" placeholder="Enter Password">
         <button onclick="adminLogin()">Login</button>
-        <button onclick="adminLogout()">Logout</button>
-        
-        <h2>Manage Guest List</h2>
-        <input type="text" id="guestName" placeholder="Enter Guest Name">
-        <button onclick="addGuest()">Add Guest</button>
-        
-        <h2>Pending Check-in Requests</h2>
-        <ul id="pendingCheckInList"></ul>
     </div>
 
-    <!-- Linking the script.js as a module -->
+    <!-- Admin Panel Section (Visible After Login) -->
+    <div class="container" id="adminContainer" style="display: none;">
+        <h2>Manage Guest List</h2>
+        
+        <!-- Add Guest -->
+        <input type="text" id="guestName" placeholder="Enter Guest Name">
+        <button onclick="addGuest()">Add Guest</button>
+
+        <!-- List of Guests -->
+        <h2>Guests List</h2>
+        <ul id="guestList"></ul>
+
+        <!-- Pending Check-in Requests -->
+        <h2>Pending Check-in Requests</h2>
+        <ul id="pendingCheckInList"></ul>
+        <button onclick="adminLogout()">Logout</button>
+    </div>
+
     <script type="module" src="script.js"></script>
 </body>
 </html>
