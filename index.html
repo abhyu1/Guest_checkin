@@ -53,14 +53,15 @@
 
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyB48zrln_P9SEIngjf58Yopkpstsac6uFM",
-            authDomain: "guest-list-8ee99.firebaseapp.com",
-            projectId: "guest-list-8ee99",
-            storageBucket: "guest-list-8ee99.firebasestorage.app",
-            messagingSenderId: "907423161396",
-            appId: "1:907423161396:web:52b2733d12a89a4cdfbe61",
-            measurementId: "G-2199LVL65J"
-        };
+          apiKey: "AIzaSyB48zrln_P9SEIngjf58Yopkpstsac6uFM",
+          authDomain: "guest-list-8ee99.firebaseapp.com",
+          databaseURL: "https://guest-list-8ee99-default-rtdb.asia-southeast1.firebasedatabase.app",  // Use your correct database URL
+          projectId: "guest-list-8ee99",
+          storageBucket: "guest-list-8ee99.appspot.com",
+          messagingSenderId: "907423161396",
+          appId: "1:907423161396:web:52b2733d12a89a4cdfbe61",
+          measurementId: "G-2199LVL65J"
+        };       
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
