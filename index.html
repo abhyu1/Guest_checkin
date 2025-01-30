@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Tracking System</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
@@ -23,32 +24,23 @@
         <ul id="guestList"></ul>
     </div>
     
-    <!-- Admin Section (Initially Visible for Login) -->
+    <!-- Admin Section (Only Visible After Login) -->
     <div class="container" id="adminContainer" style="display: none;">
-        <h2>Admin Panel</h2>
-        <h3>Manage Guest List and Check-ins</h3>
+        <h2>Admin Login</h2>
+        <input type="email" id="adminEmail" placeholder="Enter Email">
+        <input type="password" id="adminPassword" placeholder="Enter Password">
+        <button onclick="adminLogin()">Login</button>
+        <button onclick="adminLogout()">Logout</button>
         
-        <!-- Admin Login Section -->
-        <div id="loginSection">
-            <h2>Admin Login</h2>
-            <input type="email" id="adminEmail" placeholder="Enter Email">
-            <input type="password" id="adminPassword" placeholder="Enter Password">
-            <button onclick="adminLogin()">Login</button>
-        </div>
-
-        <!-- Admin Control Section (Only Visible After Login) -->
-        <div id="adminControls" style="display: none;">
-            <h2>Manage Guest List</h2>
-            <input type="text" id="guestName" placeholder="Enter Guest Name">
-            <button onclick="addGuest()">Add Guest</button>
-
-            <h2>Pending Check-in Requests</h2>
-            <ul id="pendingCheckInList"></ul>
-            
-            <button onclick="adminLogout()">Logout</button>
-        </div>
+        <h2>Manage Guest List</h2>
+        <input type="text" id="guestName" placeholder="Enter Guest Name">
+        <button onclick="addGuest()">Add Guest</button>
+        
+        <h2>Pending Check-in Requests</h2>
+        <ul id="pendingCheckInList"></ul>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Linking the script.js as a module -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
