@@ -20,7 +20,9 @@ function adminLogin() {
     const password = document.getElementById("adminPassword").value;
     auth.signInWithEmailAndPassword(email, password)
         .then(() => {
-            document.getElementById("adminContainer").style.display = "block";
+            // Show Admin Controls
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("adminControls").style.display = "block";
             loadGuestList();
             loadPendingCheckIns();
         })
@@ -30,7 +32,9 @@ function adminLogin() {
 // Admin Logout
 function adminLogout() {
     auth.signOut().then(() => {
-        document.getElementById("adminContainer").style.display = "none";
+        // Show Admin Login Section
+        document.getElementById("loginSection").style.display = "block";
+        document.getElementById("adminControls").style.display = "none";
     });
 }
 
@@ -89,3 +93,16 @@ function approveCheckIn(guestName) {
     loadGuestList();
     loadPendingCheckIns();
 }
+
+// Show Admin Container Once Logged In
+auth.onAuthStateChanged(user => {
+    if (user) {
+        // Show admin panel after successful login
+        document.getElementById("adminContainer").style.display = "block";
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("adminControls").style.display = "block";
+    } else {
+        // Hide admin panel and show login section
+        document.getElementById("adminContainer").style.display = "none";
+    }
+});
