@@ -33,9 +33,6 @@
         <button onclick="addGuest()">Add Guest</button>
         <button onclick="removeGuest()">Remove Guest</button>
 
-        <h2>Pending Check-in Requests</h2>
-        <ul id="pendingCheckInList"></ul>
-
         <h2>Search for Guest</h2>
         <input type="text" id="searchName" placeholder="Enter Guest Name to Search">
         <button onclick="searchGuest()">Search</button>
@@ -78,8 +75,6 @@
                 .then(() => {
                     document.getElementById("loginContainer").style.display = "none";  // Hide login
                     document.getElementById("adminContainer").style.display = "block";  // Show admin controls
-                    loadGuestList();
-                    loadPendingCheckIns();
                     updateCurrentGuests();
                 })
                 .catch(error => alert(error.message));
@@ -115,31 +110,6 @@
                         updateCurrentGuests();
                     });
             }
-        }
-
-        // Load Pending Check-in Requests
-        function loadPendingCheckIns() {
-            const pendingList = document.getElementById("pendingCheckInList");
-            onValue(ref(database, "checkInRequests"), snapshot => {
-                pendingList.innerHTML = "";
-                snapshot.forEach(child => {
-                    let listItem = document.createElement("li");
-                    listItem.textContent = child.key;
-                    let approveBtn = document.createElement("button");
-                    approveBtn.textContent = "Approve";
-                    approveBtn.onclick = () => approveCheckIn(child.key);
-                    listItem.appendChild(approveBtn);
-                    pendingList.appendChild(listItem);
-                });
-            });
-        }
-
-        // Approve Check-in
-        window.approveCheckIn = function(guestName) {
-            update(ref(database, "guests/" + guestName), { checkedIn: true });
-            remove(ref(database, "checkInRequests/" + guestName));
-            loadPendingCheckIns();
-            updateCurrentGuests();
         }
 
         // Search Guest
@@ -179,13 +149,19 @@
 
                         const removeBtn = document.createElement("button");
                         removeBtn.textContent = "Remove";
-                        removeBtn.onclick = () => removeGuest(guestName);
+                        removeBtn.onclick = () => removeGuestFromVenue(guestName);
 
                         listItem.appendChild(removeBtn);
                         guestList.appendChild(listItem);
                     }
                 });
             });
+        }
+
+        // Remove Guest from Venue (Separate remove logic)
+        function removeGuestFromVenue(guestName) {
+            remove(ref(database, "guests/" + guestName))
+                .then(() => updateCurrentGuests());  // Refresh the current guests list
         }
     </script>
 </body>
