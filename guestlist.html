@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Tracking System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Guest Tracking System</h1>
+    </header>
+    
+    <!-- Guest Check-in Request Section -->
+    <div class="container" id="guestContainer">
+        <h2>Guest Check-in Request</h2>
+        <select id="guestSelect"></select>
+        <button onclick="requestCheckIn()">Request Check-In</button>
+        <h2>Current Guests Inside</h2>
+        <ul id="guestList"></ul>
+    </div>
+    
+    <!-- Admin Section (Only Visible After Login) -->
+    <div class="container" id="adminContainer" style="display: none;">
+        <h2>Admin Login</h2>
+        <input type="email" id="adminEmail" placeholder="Enter Email">
+        <input type="password" id="adminPassword" placeholder="Enter Password">
+        <button onclick="adminLogin()">Login</button>
+        <button onclick="adminLogout()">Logout</button>
+        
+        <h2>Manage Guest List</h2>
+        <input type="text" id="guestName" placeholder="Enter Guest Name">
+        <button onclick="addGuest()">Add Guest</button>
+        
+        <h2>Pending Check-in Requests</h2>
+        <ul id="pendingCheckInList"></ul>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
