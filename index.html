@@ -24,23 +24,16 @@
         <button onclick="adminLogin()">Login</button>
     </div>
 
-    <!-- Guest Check-in Request Section (Visible after login) -->
-    <div class="container" id="guestContainer" style="display: none;">
-        <h2>Guest Check-in Request</h2>
-        <select id="guestSelect"></select>
-        <button onclick="requestCheckIn()">Request Check-In</button>
-        <h2>Current Guests Inside</h2>
-        <ul id="guestList"></ul>
-    </div>
-
     <!-- Admin Section (Only Visible After Login) -->
     <div class="container" id="adminContainer" style="display: none;">
         <h2>Manage Guest List</h2>
         <input type="text" id="guestName" placeholder="Enter Guest Name">
         <button onclick="addGuest()">Add Guest</button>
 
-        <h2>Currently in Venue</h2>
-        <ul id="currentGuestList"></ul>
+        <h2>Search Guest</h2>
+        <input type="text" id="searchName" placeholder="Enter Guest Name to Search">
+        <button onclick="searchGuest()">Search</button>
+        <p id="searchResult"></p>
 
         <button onclick="adminLogout()">Logout</button>
     </div>
@@ -76,8 +69,6 @@
                 .then(() => {
                     document.getElementById("loginContainer").style.display = "none";  // Hide login
                     document.getElementById("adminContainer").style.display = "block";  // Show admin controls
-                    loadGuestList();
-                    loadCurrentGuests();
                 })
                 .catch(error => alert(error.message));
         }
@@ -96,58 +87,34 @@
             if (guestName) {
                 set(ref(database, "guests/" + guestName), { checkedIn: false });
                 document.getElementById("guestName").value = "";
-                loadGuestList();
             }
         }
 
-        // Load Guests into Dropdown
-        function loadGuestList() {
-            const guestSelect = document.getElementById("guestSelect");
-            get(ref(database, "guests")).then(snapshot => {
-                guestSelect.innerHTML = "";
-                snapshot.forEach(child => {
-                    let option = document.createElement("option");
-                    option.textContent = child.key;
-                    guestSelect.appendChild(option);
-                });
-            });
-        }
+        // Search Guest
+        window.searchGuest = function() {
+            const searchName = document.getElementById("searchName").value.trim();
+            const searchResult = document.getElementById("searchResult");
 
-        // Request Check-in
-        window.requestCheckIn = function() {
-            const guestName = document.getElementById("guestSelect").value;
-            if (guestName) {
-                set(ref(database, "checkInRequests/" + guestName), true);
-            }
-        }
-
-        // Load Currently Checked-in Guests
-        function loadCurrentGuests() {
-            const currentGuestList = document.getElementById("currentGuestList");
-            onValue(ref(database, "guests"), snapshot => {
-                currentGuestList.innerHTML = "";
-                snapshot.forEach(child => {
-                    let listItem = document.createElement("li");
-                    listItem.textContent = child.key;
-                    if (child.val().checkedIn) {
-                        listItem.style.color = "green";  // Green for checked-in guests
+            if (searchName) {
+                get(ref(database, "guests/" + searchName)).then(snapshot => {
+                    if (snapshot.exists()) {
+                        const guestData = snapshot.val();
+                        if (guestData.checkedIn) {
+                            searchResult.textContent = `${searchName} is checked in.`;
+                            searchResult.style.color = "green"; // Green for checked-in guest
+                        } else {
+                            searchResult.textContent = `${searchName} is not checked in.`;
+                            searchResult.style.color = "red"; // Red for not checked-in guest
+                        }
                     } else {
-                        listItem.style.color = "red";  // Red for non-checked-in guests
+                        searchResult.textContent = `${searchName} is not found in the database.`;
+                        searchResult.style.color = "red"; // Red for not found guest
                     }
-                    let removeBtn = document.createElement("button");
-                    removeBtn.textContent = "Remove";
-                    removeBtn.style.fontSize = "12px";  // Make remove button smaller
-                    removeBtn.onclick = () => removeGuest(child.key);
-                    listItem.appendChild(removeBtn);
-                    currentGuestList.appendChild(listItem);
                 });
-            });
-        }
-
-        // Remove Guest
-        window.removeGuest = function(guestName) {
-            remove(ref(database, "guests/" + guestName));
-            loadCurrentGuests();  // Reload the list after removal
+            } else {
+                searchResult.textContent = "Please enter a name to search.";
+                searchResult.style.color = "black";
+            }
         }
     </script>
 </body>
