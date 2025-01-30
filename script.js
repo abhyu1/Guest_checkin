@@ -23,14 +23,22 @@ const database = getDatabase(app);
 function adminLogin() {
   const email = document.getElementById("adminEmail").value;
   const password = document.getElementById("adminPassword").value;
+
+  console.log("Attempting to log in with email:", email);  // Debugging log
+
   signInWithEmailAndPassword(auth, email, password)
     .then(() => {
-      document.getElementById("loginContainer").style.display = "none"; // Hide login form
-      document.getElementById("adminContainer").style.display = "block"; // Show admin panel
-      loadGuestList(); // Load the guest list after login
+      console.log("Login successful");  // If login is successful, this will show
+      document.getElementById("loginContainer").style.display = "none";  // Hide login form
+      document.getElementById("adminContainer").style.display = "block";  // Show admin panel
+      loadGuestList();  // Load the guest list after login
     })
-    .catch(error => alert(error.message));
+    .catch(error => {
+      console.log("Login error:", error.message);  // Log error if login fails
+      alert(error.message);  // Show alert for errors
+    });
 }
+
 
 // Admin Logout
 function adminLogout() {
