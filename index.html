@@ -24,22 +24,23 @@
         <button onclick="adminLogin()">Login</button>
     </div>
 
+    <!-- Guest Check-in Request Section (Visible after login) -->
+    <div class="container" id="guestContainer" style="display: none;">
+        <h2>Guest Check-in Request</h2>
+        <select id="guestSelect"></select>
+        <button onclick="requestCheckIn()">Request Check-In</button>
+        <h2>Current Guests Inside</h2>
+        <ul id="guestList"></ul>
+    </div>
+
     <!-- Admin Section (Only Visible After Login) -->
     <div class="container" id="adminContainer" style="display: none;">
         <h2>Manage Guest List</h2>
         <input type="text" id="guestName" placeholder="Enter Guest Name">
-        
-        <!-- Separate buttons for Add and Remove -->
         <button onclick="addGuest()">Add Guest</button>
-        <button onclick="removeGuest()">Remove Guest</button>
-
-        <h2>Search for Guest</h2>
-        <input type="text" id="searchName" placeholder="Enter Guest Name to Search">
-        <button onclick="searchGuest()">Search</button>
-        <p id="searchResult"></p>
 
         <h2>Currently in Venue</h2>
-        <ul id="guestList"></ul>
+        <ul id="currentGuestList"></ul>
 
         <button onclick="adminLogout()">Logout</button>
     </div>
@@ -54,13 +55,13 @@
         const firebaseConfig = {
           apiKey: "AIzaSyB48zrln_P9SEIngjf58Yopkpstsac6uFM",
           authDomain: "guest-list-8ee99.firebaseapp.com",
-          databaseURL: "https://guest-list-8ee99-default-rtdb.asia-southeast1.firebasedatabase.app",
+          databaseURL: "https://guest-list-8ee99-default-rtdb.asia-southeast1.firebasedatabase.app",  
           projectId: "guest-list-8ee99",
           storageBucket: "guest-list-8ee99.appspot.com",
           messagingSenderId: "907423161396",
           appId: "1:907423161396:web:52b2733d12a89a4cdfbe61",
           measurementId: "G-2199LVL65J"
-        };
+        };       
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -75,7 +76,8 @@
                 .then(() => {
                     document.getElementById("loginContainer").style.display = "none";  // Hide login
                     document.getElementById("adminContainer").style.display = "block";  // Show admin controls
-                    updateCurrentGuests();
+                    loadGuestList();
+                    loadCurrentGuests();
                 })
                 .catch(error => alert(error.message));
         }
@@ -88,80 +90,64 @@
             });
         }
 
-        // Add Guest (Automatically checked-in)
+        // Add Guest
         window.addGuest = function() {
             const guestName = document.getElementById("guestName").value;
             if (guestName) {
-                set(ref(database, "guests/" + guestName), { checkedIn: true })
-                    .then(() => {
-                        document.getElementById("guestName").value = "";  // Clear input field
-                        updateCurrentGuests();
-                    });
+                set(ref(database, "guests/" + guestName), { checkedIn: false });
+                document.getElementById("guestName").value = "";
+                loadGuestList();
             }
         }
 
-        // Remove Guest from Venue
-        window.removeGuest = function() {
-            const guestName = document.getElementById("guestName").value;
-            if (guestName) {
-                remove(ref(database, "guests/" + guestName))
-                    .then(() => {
-                        document.getElementById("guestName").value = "";  // Clear input field
-                        updateCurrentGuests();
-                    });
-            }
-        }
-
-        // Search Guest
-        window.searchGuest = function() {
-            const guestName = document.getElementById("searchName").value;
-            const resultMessage = document.getElementById("searchResult");
-
-            if (guestName) {
-                get(ref(database, "guests/" + guestName)).then(snapshot => {
-                    if (snapshot.exists()) {
-                        const guestData = snapshot.val();
-                        if (guestData.checkedIn) {
-                            resultMessage.textContent = guestName + " is checked in.";
-                        } else {
-                            resultMessage.textContent = guestName + " is not checked in.";
-                        }
-                    } else {
-                        resultMessage.textContent = "Guest not found.";
-                    }
-                });
-            } else {
-                resultMessage.textContent = "Please enter a guest name.";
-            }
-        }
-
-        // Display the current guests in the venue
-        function updateCurrentGuests() {
-            const guestList = document.getElementById("guestList");
+        // Load Guests into Dropdown
+        function loadGuestList() {
+            const guestSelect = document.getElementById("guestSelect");
             get(ref(database, "guests")).then(snapshot => {
-                guestList.innerHTML = "";
+                guestSelect.innerHTML = "";
                 snapshot.forEach(child => {
-                    const guestName = child.key;
-                    const checkedIn = child.val().checkedIn;
-                    if (checkedIn) {
-                        const listItem = document.createElement("li");
-                        listItem.textContent = guestName;
-
-                        const removeBtn = document.createElement("button");
-                        removeBtn.textContent = "Remove";
-                        removeBtn.onclick = () => removeGuestFromVenue(guestName);
-
-                        listItem.appendChild(removeBtn);
-                        guestList.appendChild(listItem);
-                    }
+                    let option = document.createElement("option");
+                    option.textContent = child.key;
+                    guestSelect.appendChild(option);
                 });
             });
         }
 
-        // Remove Guest from Venue (Separate remove logic)
-        function removeGuestFromVenue(guestName) {
-            remove(ref(database, "guests/" + guestName))
-                .then(() => updateCurrentGuests());  // Refresh the current guests list
+        // Request Check-in
+        window.requestCheckIn = function() {
+            const guestName = document.getElementById("guestSelect").value;
+            if (guestName) {
+                set(ref(database, "checkInRequests/" + guestName), true);
+            }
+        }
+
+        // Load Currently Checked-in Guests
+        function loadCurrentGuests() {
+            const currentGuestList = document.getElementById("currentGuestList");
+            onValue(ref(database, "guests"), snapshot => {
+                currentGuestList.innerHTML = "";
+                snapshot.forEach(child => {
+                    let listItem = document.createElement("li");
+                    listItem.textContent = child.key;
+                    if (child.val().checkedIn) {
+                        listItem.style.color = "green";  // Green for checked-in guests
+                    } else {
+                        listItem.style.color = "red";  // Red for non-checked-in guests
+                    }
+                    let removeBtn = document.createElement("button");
+                    removeBtn.textContent = "Remove";
+                    removeBtn.style.fontSize = "12px";  // Make remove button smaller
+                    removeBtn.onclick = () => removeGuest(child.key);
+                    listItem.appendChild(removeBtn);
+                    currentGuestList.appendChild(listItem);
+                });
+            });
+        }
+
+        // Remove Guest
+        window.removeGuest = function(guestName) {
+            remove(ref(database, "guests/" + guestName));
+            loadCurrentGuests();  // Reload the list after removal
         }
     </script>
 </body>
