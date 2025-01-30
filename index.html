@@ -24,20 +24,14 @@
         <button onclick="adminLogin()">Login</button>
     </div>
 
-    <!-- Guest Check-in Request Section (Visible after login) -->
-    <div class="container" id="guestContainer" style="display: none;">
-        <h2>Guest Check-in Request</h2>
-        <select id="guestSelect"></select>
-        <button onclick="requestCheckIn()">Request Check-In</button>
-        <h2>Current Guests Inside</h2>
-        <ul id="guestList"></ul>
-    </div>
-
     <!-- Admin Section (Only Visible After Login) -->
     <div class="container" id="adminContainer" style="display: none;">
         <h2>Manage Guest List</h2>
         <input type="text" id="guestName" placeholder="Enter Guest Name">
+        
+        <!-- Separate buttons for Add and Remove -->
         <button onclick="addGuest()">Add Guest</button>
+        <button onclick="removeGuest()">Remove Guest</button>
 
         <h2>Pending Check-in Requests</h2>
         <ul id="pendingCheckInList"></ul>
@@ -46,6 +40,9 @@
         <input type="text" id="searchName" placeholder="Enter Guest Name to Search">
         <button onclick="searchGuest()">Search</button>
         <p id="searchResult"></p>
+
+        <h2>Currently in Venue</h2>
+        <ul id="guestList"></ul>
 
         <button onclick="adminLogout()">Logout</button>
     </div>
@@ -60,7 +57,7 @@
         const firebaseConfig = {
           apiKey: "AIzaSyB48zrln_P9SEIngjf58Yopkpstsac6uFM",
           authDomain: "guest-list-8ee99.firebaseapp.com",
-          databaseURL: "https://guest-list-8ee99-default-rtdb.asia-southeast1.firebasedatabase.app",  // Use your correct database URL
+          databaseURL: "https://guest-list-8ee99-default-rtdb.asia-southeast1.firebasedatabase.app",
           projectId: "guest-list-8ee99",
           storageBucket: "guest-list-8ee99.appspot.com",
           messagingSenderId: "907423161396",
@@ -83,6 +80,7 @@
                     document.getElementById("adminContainer").style.display = "block";  // Show admin controls
                     loadGuestList();
                     loadPendingCheckIns();
+                    updateCurrentGuests();
                 })
                 .catch(error => alert(error.message));
         }
@@ -95,34 +93,27 @@
             });
         }
 
-        // Add Guest
+        // Add Guest (Automatically checked-in)
         window.addGuest = function() {
             const guestName = document.getElementById("guestName").value;
             if (guestName) {
-                set(ref(database, "guests/" + guestName), { checkedIn: false });
-                document.getElementById("guestName").value = "";
-                loadGuestList();
+                set(ref(database, "guests/" + guestName), { checkedIn: true })
+                    .then(() => {
+                        document.getElementById("guestName").value = "";  // Clear input field
+                        updateCurrentGuests();
+                    });
             }
         }
 
-        // Load Guests into Dropdown
-        function loadGuestList() {
-            const guestSelect = document.getElementById("guestSelect");
-            get(ref(database, "guests")).then(snapshot => {
-                guestSelect.innerHTML = "";
-                snapshot.forEach(child => {
-                    let option = document.createElement("option");
-                    option.textContent = child.key;
-                    guestSelect.appendChild(option);
-                });
-            });
-        }
-
-        // Request Check-in
-        window.requestCheckIn = function() {
-            const guestName = document.getElementById("guestSelect").value;
+        // Remove Guest from Venue
+        window.removeGuest = function() {
+            const guestName = document.getElementById("guestName").value;
             if (guestName) {
-                set(ref(database, "checkInRequests/" + guestName), true);
+                remove(ref(database, "guests/" + guestName))
+                    .then(() => {
+                        document.getElementById("guestName").value = "";  // Clear input field
+                        updateCurrentGuests();
+                    });
             }
         }
 
@@ -147,8 +138,8 @@
         window.approveCheckIn = function(guestName) {
             update(ref(database, "guests/" + guestName), { checkedIn: true });
             remove(ref(database, "checkInRequests/" + guestName));
-            loadGuestList();
             loadPendingCheckIns();
+            updateCurrentGuests();
         }
 
         // Search Guest
@@ -174,17 +165,6 @@
             }
         }
 
-        // Remove Guest from Venue
-        window.removeGuest = function(guestName) {
-            // Remove from the "guests" list
-            remove(ref(database, "guests/" + guestName));
-            // Remove from the "checkInRequests" list (if they were pending check-in)
-            remove(ref(database, "checkInRequests/" + guestName));
-            // Update the venue list
-            loadGuestList();
-            loadPendingCheckIns();
-        }
-
         // Display the current guests in the venue
         function updateCurrentGuests() {
             const guestList = document.getElementById("guestList");
@@ -207,9 +187,6 @@
                 });
             });
         }
-
-        // Update the list of current guests whenever changes occur
-        onValue(ref(database, "guests"), updateCurrentGuests);
     </script>
 </body>
 </html>
