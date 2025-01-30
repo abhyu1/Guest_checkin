@@ -110,6 +110,20 @@
                     option.textContent = child.key;
                     guestSelect.appendChild(option);
                 });
+                loadCurrentGuests();  // Load the current guests on the page
+            });
+        }
+
+        // Display Current Guests
+        function loadCurrentGuests() {
+            const guestList = document.getElementById("guestList");
+            get(ref(database, "guests")).then(snapshot => {
+                guestList.innerHTML = "";  // Clear the list first
+                snapshot.forEach(child => {
+                    let listItem = document.createElement("li");
+                    listItem.textContent = child.key;
+                    guestList.appendChild(listItem);  // Add guest name to the list
+                });
             });
         }
 
@@ -148,5 +162,3 @@
     </script>
 </body>
 </html>
-
-
