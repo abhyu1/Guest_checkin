@@ -45,6 +45,11 @@
         <h2>Current Guests in Venue</h2>
         <ul id="currentGuestsInVenue"></ul> <!-- List of checked-in guests -->
 
+        <h2>Search Guest</h2>
+        <input type="text" id="searchName" placeholder="Search by Name">
+        <button onclick="searchGuest()">Search</button>
+        <p id="searchResult"></p> <!-- Display search result -->
+
         <button onclick="adminLogout()">Logout</button>
     </div>
 
@@ -182,6 +187,39 @@
             loadCurrentGuestsInVenue(); // Reload the checked-in guests list
             loadPendingCheckIns(); // Reload the pending check-ins
         }
+
+        // Search for a Guest
+        window.searchGuest = function() {
+            const searchName = document.getElementById("searchName").value.trim();
+            const searchResult = document.getElementById("searchResult");
+            
+            if (searchName) {
+                get(ref(database, "guests/" + searchName)).then(snapshot => {
+                    if (snapshot.exists()) {
+                        const guest = snapshot.val();
+                        if (guest.checkedIn) {
+                            searchResult.textContent = `${searchName} is currently checked in.`;
+                            searchResult.style.color = "green";
+                        } else {
+                            searchResult.textContent = `${searchName} is not checked in yet.`;
+                            searchResult.style.color = "orange";
+                        }
+                    } else {
+                        searchResult.textContent = `${searchName} not found in the database.`;
+                        searchResult.style.color = "red";
+                    }
+                });
+            }
+        }
+
+        // Remove Guest from Database and Venue
+        window.removeGuest = function(guestName) {
+            // Remove from guests and current venue
+            remove(ref(database, "guests/" + guestName));
+            loadGuestList(); // Reload the guest list
+            loadCurrentGuestsInVenue(); // Reload checked-in guests
+        }
     </script>
 </body>
 </html>
+
