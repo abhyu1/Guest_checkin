@@ -29,8 +29,8 @@
         <h2>Guest Check-in Request</h2>
         <select id="guestSelect"></select>
         <button onclick="requestCheckIn()">Request Check-In</button>
-        <h2>Current Guests Inside</h2>
-        <ul id="guestList"></ul>
+        <h2>Pending Check-in Requests</h2>
+        <ul id="pendingCheckInList"></ul>
     </div>
 
     <!-- Admin Section (Only Visible After Login) -->
@@ -39,8 +39,11 @@
         <input type="text" id="guestName" placeholder="Enter Guest Name">
         <button onclick="addGuest()">Add Guest</button>
 
-        <h2>Pending Check-in Requests</h2>
-        <ul id="pendingCheckInList"></ul>
+        <h2>Current Guests Inside</h2>
+        <ul id="guestList"></ul> <!-- List of current guests inside the venue -->
+
+        <h2>Current Guests in Venue</h2>
+        <ul id="currentGuestsInVenue"></ul> <!-- List of checked-in guests -->
 
         <button onclick="adminLogout()">Logout</button>
     </div>
@@ -77,6 +80,7 @@
                     document.getElementById("loginContainer").style.display = "none";  // Hide login
                     document.getElementById("adminContainer").style.display = "block";  // Show admin controls
                     loadGuestList();
+                    loadCurrentGuestsInVenue();  // Load current guests in the venue
                     loadPendingCheckIns();
                 })
                 .catch(error => alert(error.message));
@@ -98,6 +102,7 @@
                 set(ref(database, "guests/" + guestName), { checkedIn: false });
                 document.getElementById("guestName").value = ""; // Clear the input
                 loadGuestList(); // Reload the guest list
+                loadCurrentGuestsInVenue(); // Reload current checked-in guests
             }
         }
 
@@ -126,11 +131,28 @@
             });
         }
 
+        // Load Current Checked-in Guests
+        function loadCurrentGuestsInVenue() {
+            const currentGuestsInVenue = document.getElementById("currentGuestsInVenue");
+            currentGuestsInVenue.innerHTML = "";  // Clear the list
+
+            // Fetch the checked-in guests from the Firebase database
+            get(ref(database, "guests")).then(snapshot => {
+                snapshot.forEach(child => {
+                    if (child.val().checkedIn) {
+                        let listItem = document.createElement("li");
+                        listItem.textContent = child.key;
+                        currentGuestsInVenue.appendChild(listItem);
+                    }
+                });
+            });
+        }
+
         // Request Check-in
         window.requestCheckIn = function() {
             const guestName = document.getElementById("guestSelect").value;
             if (guestName) {
-                // Mark the guest as checked-in
+                // Mark the guest as checked-in in the "checkInRequests" node
                 set(ref(database, "checkInRequests/" + guestName), true);
             }
         }
@@ -157,9 +179,9 @@
             update(ref(database, "guests/" + guestName), { checkedIn: true });
             remove(ref(database, "checkInRequests/" + guestName));
             loadGuestList(); // Reload the guest list to reflect changes
+            loadCurrentGuestsInVenue(); // Reload the checked-in guests list
             loadPendingCheckIns(); // Reload the pending check-ins
         }
     </script>
 </body>
 </html>
-
