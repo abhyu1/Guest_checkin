@@ -61,7 +61,7 @@
           messagingSenderId: "907423161396",
           appId: "1:907423161396:web:52b2733d12a89a4cdfbe61",
           measurementId: "G-2199LVL65J"
-        };       
+        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -94,35 +94,34 @@
         window.addGuest = function() {
             const guestName = document.getElementById("guestName").value;
             if (guestName) {
+                // Add guest to the "guests" node in the database
                 set(ref(database, "guests/" + guestName), { checkedIn: false });
-                document.getElementById("guestName").value = "";
-                loadGuestList();
+                document.getElementById("guestName").value = ""; // Clear the input
+                loadGuestList(); // Reload the guest list
             }
         }
 
-        // Load Guests into Dropdown
+        // Load Guests into Dropdown and Guest List
         function loadGuestList() {
             const guestSelect = document.getElementById("guestSelect");
+            const guestList = document.getElementById("guestList");
+
+            // Clear both dropdown and the guest list
+            guestSelect.innerHTML = "";
+            guestList.innerHTML = "";
+
+            // Fetch the guests from the Firebase database
             get(ref(database, "guests")).then(snapshot => {
-                guestSelect.innerHTML = "";
                 snapshot.forEach(child => {
+                    // Add guests to dropdown
                     let option = document.createElement("option");
                     option.textContent = child.key;
                     guestSelect.appendChild(option);
-                });
-                loadCurrentGuests();  // Load the current guests on the page
-            });
-        }
 
-        // Display Current Guests
-        function loadCurrentGuests() {
-            const guestList = document.getElementById("guestList");
-            get(ref(database, "guests")).then(snapshot => {
-                guestList.innerHTML = "";  // Clear the list first
-                snapshot.forEach(child => {
+                    // Add guests to the list of current guests on the page
                     let listItem = document.createElement("li");
                     listItem.textContent = child.key;
-                    guestList.appendChild(listItem);  // Add guest name to the list
+                    guestList.appendChild(listItem);
                 });
             });
         }
@@ -131,6 +130,7 @@
         window.requestCheckIn = function() {
             const guestName = document.getElementById("guestSelect").value;
             if (guestName) {
+                // Mark the guest as checked-in
                 set(ref(database, "checkInRequests/" + guestName), true);
             }
         }
@@ -156,9 +156,10 @@
         window.approveCheckIn = function(guestName) {
             update(ref(database, "guests/" + guestName), { checkedIn: true });
             remove(ref(database, "checkInRequests/" + guestName));
-            loadGuestList();
-            loadPendingCheckIns();
+            loadGuestList(); // Reload the guest list to reflect changes
+            loadPendingCheckIns(); // Reload the pending check-ins
         }
     </script>
 </body>
 </html>
+
