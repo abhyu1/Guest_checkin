@@ -25,21 +25,18 @@ function adminLogin() {
   const password = document.getElementById("adminPassword").value;
   signInWithEmailAndPassword(auth, email, password)
     .then(() => {
-      // Show admin panel after successful login
-      console.log("Admin login successful!");  // Check if login is successful
-      document.getElementById("adminContainer").style.display = "block";  
-      loadGuestList();
-      loadPendingCheckIns();
+      document.getElementById("loginContainer").style.display = "none"; // Hide login form
+      document.getElementById("adminContainer").style.display = "block"; // Show admin panel
+      loadGuestList(); // Load the guest list after login
     })
-    .catch(error => {
-      console.log(error.message);  // Log error message for debugging
-      alert(error.message);
-    });
+    .catch(error => alert(error.message));
 }
+
 // Admin Logout
 function adminLogout() {
   signOut(auth).then(() => {
-    document.getElementById("adminContainer").style.display = "none";
+    document.getElementById("loginContainer").style.display = "block"; // Show login form
+    document.getElementById("adminContainer").style.display = "none"; // Hide admin panel
   });
 }
 
@@ -47,45 +44,40 @@ function adminLogout() {
 function addGuest() {
   const guestName = document.getElementById("guestName").value;
   if (guestName) {
-    set(ref(database, "guests/" + guestName), { checkedIn: false });
-    document.getElementById("guestName").value = "";
-    loadGuestList();
-  }
-}
-
-// Load Guests into Dropdown
-function loadGuestList() {
-  const guestSelect = document.getElementById("guestSelect");
-  get(ref(database, "guests"))
-    .then((snapshot) => {
-      guestSelect.innerHTML = "";
-      snapshot.forEach(childSnapshot => {
-        let option = document.createElement("option");
-        option.textContent = childSnapshot.key;
-        guestSelect.appendChild(option);
-      });
+    set(ref(database, "guests/" + guestName), {
+      checkedIn: false
     });
-}
-
-// Request Check-in
-function requestCheckIn() {
-  const guestName = document.getElementById("guestSelect").value;
-  if (guestName) {
-    set(ref(database, "checkInRequests/" + guestName), true);
+    document.getElementById("guestName").value = ""; // Clear input field
+    loadGuestList(); // Reload the guest list
   }
 }
 
-// Load Pending Check-in Requests
+// Load Guests into List
+function loadGuestList() {
+  const guestList = document.getElementById("guestList");
+  get(ref(database, "guests")).then(snapshot => {
+    guestList.innerHTML = ""; // Clear current list
+    snapshot.forEach(childSnapshot => {
+      const guestName = childSnapshot.key;
+      const listItem = document.createElement("li");
+      listItem.textContent = guestName;
+      guestList.appendChild(listItem);
+    });
+  });
+}
+
+// Load Pending Check-ins (if any)
 function loadPendingCheckIns() {
   const pendingList = document.getElementById("pendingCheckInList");
-  onValue(ref(database, "checkInRequests"), (snapshot) => {
-    pendingList.innerHTML = "";
+  onValue(ref(database, "checkInRequests"), snapshot => {
+    pendingList.innerHTML = ""; // Clear current pending list
     snapshot.forEach(childSnapshot => {
-      let listItem = document.createElement("li");
-      listItem.textContent = childSnapshot.key;
-      let approveBtn = document.createElement("button");
+      const guestName = childSnapshot.key;
+      const listItem = document.createElement("li");
+      listItem.textContent = guestName;
+      const approveBtn = document.createElement("button");
       approveBtn.textContent = "Approve";
-      approveBtn.onclick = () => approveCheckIn(childSnapshot.key);
+      approveBtn.onclick = () => approveCheckIn(guestName);
       listItem.appendChild(approveBtn);
       pendingList.appendChild(listItem);
     });
@@ -94,8 +86,11 @@ function loadPendingCheckIns() {
 
 // Approve Check-in
 function approveCheckIn(guestName) {
-  update(ref(database, "guests/" + guestName), { checkedIn: true });
-  remove(ref(database, "checkInRequests/" + guestName));
+  set(ref(database, "guests/" + guestName), {
+    checkedIn: true
+  });
+  // Remove from pending check-ins
+  set(ref(database, "checkInRequests/" + guestName), null);
   loadGuestList();
   loadPendingCheckIns();
 }
