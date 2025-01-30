@@ -68,7 +68,7 @@
         const database = getDatabase(app);
 
         // Admin Login
-        function adminLogin() {
+        window.adminLogin = function() {
             const email = document.getElementById("adminEmail").value;
             const password = document.getElementById("adminPassword").value;
             signInWithEmailAndPassword(auth, email, password)
@@ -82,7 +82,7 @@
         }
 
         // Admin Logout
-        function adminLogout() {
+        window.adminLogout = function() {
             signOut(auth).then(() => {
                 document.getElementById("adminContainer").style.display = "none";
                 document.getElementById("loginContainer").style.display = "block";  // Show login on logout
@@ -90,7 +90,7 @@
         }
 
         // Add Guest
-        function addGuest() {
+        window.addGuest = function() {
             const guestName = document.getElementById("guestName").value;
             if (guestName) {
                 set(ref(database, "guests/" + guestName), { checkedIn: false });
@@ -113,7 +113,7 @@
         }
 
         // Request Check-in
-        function requestCheckIn() {
+        window.requestCheckIn = function() {
             const guestName = document.getElementById("guestSelect").value;
             if (guestName) {
                 set(ref(database, "checkInRequests/" + guestName), true);
@@ -138,7 +138,7 @@
         }
 
         // Approve Check-in
-        function approveCheckIn(guestName) {
+        window.approveCheckIn = function(guestName) {
             update(ref(database, "guests/" + guestName), { checkedIn: true });
             remove(ref(database, "checkInRequests/" + guestName));
             loadGuestList();
@@ -147,3 +147,5 @@
     </script>
 </body>
 </html>
+
+
