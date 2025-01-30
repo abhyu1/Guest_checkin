@@ -4,13 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Tracking System</title>
-    <link rel="stylesheet" href="style.css"> <!-- Ensure correct path -->
-    <script type="module">
-        // Firebase Configuration and Initialization
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase CDN links -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Guest Tracking System</h1>
+    </header>
 
+    <!-- Login Section (Visible initially) -->
+    <div class="container" id="loginContainer">
+        <h2>Admin Login</h2>
+        <input type="email" id="adminEmail" placeholder="Enter Email">
+        <input type="password" id="adminPassword" placeholder="Enter Password">
+        <button onclick="adminLogin()">Login</button>
+    </div>
+
+    <!-- Guest Check-in Request Section (Visible after login) -->
+    <div class="container" id="guestContainer" style="display: none;">
+        <h2>Guest Check-in Request</h2>
+        <select id="guestSelect"></select>
+        <button onclick="requestCheckIn()">Request Check-In</button>
+        <h2>Current Guests Inside</h2>
+        <ul id="guestList"></ul>
+    </div>
+
+    <!-- Admin Section (Only Visible After Login) -->
+    <div class="container" id="adminContainer" style="display: none;">
+        <h2>Manage Guest List</h2>
+        <input type="text" id="guestName" placeholder="Enter Guest Name">
+        <button onclick="addGuest()">Add Guest</button>
+
+        <h2>Pending Check-in Requests</h2>
+        <ul id="pendingCheckInList"></ul>
+
+        <button onclick="adminLogout()">Logout</button>
+    </div>
+
+    <script>
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyB48zrln_P9SEIngjf58Yopkpstsac6uFM",
             authDomain: "guest-list-8ee99.firebaseapp.com",
@@ -21,65 +57,67 @@
             measurementId: "G-2199LVL65J"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const database = getDatabase(app);
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
 
         // Admin Login
-        window.adminLogin = function () {
+        function adminLogin() {
             const email = document.getElementById("adminEmail").value;
             const password = document.getElementById("adminPassword").value;
-            signInWithEmailAndPassword(auth, email, password)
+            auth.signInWithEmailAndPassword(email, password)
                 .then(() => {
-                    document.getElementById("adminContainer").style.display = "block";
+                    document.getElementById("loginContainer").style.display = "none";  // Hide login
+                    document.getElementById("adminContainer").style.display = "block";  // Show admin controls
                     loadGuestList();
                     loadPendingCheckIns();
                 })
                 .catch(error => alert(error.message));
-        };
+        }
 
         // Admin Logout
-        window.adminLogout = function () {
-            signOut(auth).then(() => {
+        function adminLogout() {
+            auth.signOut().then(() => {
                 document.getElementById("adminContainer").style.display = "none";
+                document.getElementById("loginContainer").style.display = "block";  // Show login on logout
             });
-        };
+        }
 
         // Add Guest
-        window.addGuest = function () {
+        function addGuest() {
             const guestName = document.getElementById("guestName").value;
             if (guestName) {
-                set(ref(database, "guests/" + guestName), { checkedIn: false });
+                database.ref("guests/" + guestName).set({ checkedIn: false });
                 document.getElementById("guestName").value = "";
                 loadGuestList();
             }
-        };
+        }
 
         // Load Guests into Dropdown
-        window.loadGuestList = function () {
-            const guestSelect = document.getElementById("guestSelect");
-            get(ref(database, "guests"))
-                .then(snapshot => {
-                    guestSelect.innerHTML = "";
-                    snapshot.forEach(child => {
-                        let option = document.createElement("option");
-                        option.textContent = child.key;
-                        guestSelect.appendChild(option);
-                    });
+        function loadGuestList() {
+            database.ref("guests").once("value", snapshot => {
+                const guestSelect = document.getElementById("guestSelect");
+                guestSelect.innerHTML = "";
+                snapshot.forEach(child => {
+                    let option = document.createElement("option");
+                    option.textContent = child.key;
+                    guestSelect.appendChild(option);
                 });
-        };
+            });
+        }
 
         // Request Check-in
-        window.requestCheckIn = function () {
+        function requestCheckIn() {
             const guestName = document.getElementById("guestSelect").value;
             if (guestName) {
-                set(ref(database, "checkInRequests/" + guestName), true);
+                database.ref("checkInRequests/" + guestName).set(true);
             }
-        };
+        }
 
         // Load Pending Check-in Requests
-        window.loadPendingCheckIns = function () {
-            onValue(ref(database, "checkInRequests"), snapshot => {
+        function loadPendingCheckIns() {
+            database.ref("checkInRequests").on("value", snapshot => {
                 const pendingList = document.getElementById("pendingCheckInList");
                 pendingList.innerHTML = "";
                 snapshot.forEach(child => {
@@ -92,47 +130,15 @@
                     pendingList.appendChild(listItem);
                 });
             });
-        };
+        }
 
         // Approve Check-in
-        window.approveCheckIn = function (guestName) {
-            set(ref(database, "guests/" + guestName), { checkedIn: true });
-            set(ref(database, "checkInRequests/" + guestName), null);
+        function approveCheckIn(guestName) {
+            database.ref("guests/" + guestName).update({ checkedIn: true });
+            database.ref("checkInRequests/" + guestName).remove();
             loadGuestList();
             loadPendingCheckIns();
-        };
+        }
     </script>
-</head>
-<body>
-    <header>
-        <h1>Guest Tracking System</h1>
-    </header>
-    
-    <!-- Guest Check-in Request Section -->
-    <div class="container" id="guestContainer">
-        <h2>Guest Check-in Request</h2>
-        <select id="guestSelect"></select>
-        <button onclick="requestCheckIn()">Request Check-In</button>
-        <h2>Current Guests Inside</h2>
-        <ul id="guestList"></ul>
-    </div>
-    
-    <!-- Admin Section (Only Visible After Login) -->
-    <div class="container" id="adminContainer" style="display: none;">
-        <h2>Admin Login</h2>
-        <input type="email" id="adminEmail" placeholder="Enter Email">
-        <input type="password" id="adminPassword" placeholder="Enter Password">
-        <button onclick="adminLogin()">Login</button>
-        <button onclick="adminLogout()">Logout</button>
-        
-        <h2>Manage Guest List</h2>
-        <input type="text" id="guestName" placeholder="Enter Guest Name">
-        <button onclick="addGuest()">Add Guest</button>
-        
-        <h2>Pending Check-in Requests</h2>
-        <ul id="pendingCheckInList"></ul>
-    </div>
-
-    <script type="module" src="script.js"></script>
 </body>
 </html>
