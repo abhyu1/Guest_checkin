@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Tracking System</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Firebase CDN links -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+    <!-- Firebase CDN links with type="module" -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
     <header>
@@ -45,7 +45,12 @@
         <button onclick="adminLogout()">Logout</button>
     </div>
 
-    <script>
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyB48zrln_P9SEIngjf58Yopkpstsac6uFM",
@@ -58,15 +63,15 @@
         };
 
         // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const database = firebase.database();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
 
         // Admin Login
         function adminLogin() {
             const email = document.getElementById("adminEmail").value;
             const password = document.getElementById("adminPassword").value;
-            auth.signInWithEmailAndPassword(email, password)
+            signInWithEmailAndPassword(auth, email, password)
                 .then(() => {
                     document.getElementById("loginContainer").style.display = "none";  // Hide login
                     document.getElementById("adminContainer").style.display = "block";  // Show admin controls
@@ -78,7 +83,7 @@
 
         // Admin Logout
         function adminLogout() {
-            auth.signOut().then(() => {
+            signOut(auth).then(() => {
                 document.getElementById("adminContainer").style.display = "none";
                 document.getElementById("loginContainer").style.display = "block";  // Show login on logout
             });
@@ -88,7 +93,7 @@
         function addGuest() {
             const guestName = document.getElementById("guestName").value;
             if (guestName) {
-                database.ref("guests/" + guestName).set({ checkedIn: false });
+                set(ref(database, "guests/" + guestName), { checkedIn: false });
                 document.getElementById("guestName").value = "";
                 loadGuestList();
             }
@@ -96,8 +101,8 @@
 
         // Load Guests into Dropdown
         function loadGuestList() {
-            database.ref("guests").once("value", snapshot => {
-                const guestSelect = document.getElementById("guestSelect");
+            const guestSelect = document.getElementById("guestSelect");
+            get(ref(database, "guests")).then(snapshot => {
                 guestSelect.innerHTML = "";
                 snapshot.forEach(child => {
                     let option = document.createElement("option");
@@ -111,14 +116,14 @@
         function requestCheckIn() {
             const guestName = document.getElementById("guestSelect").value;
             if (guestName) {
-                database.ref("checkInRequests/" + guestName).set(true);
+                set(ref(database, "checkInRequests/" + guestName), true);
             }
         }
 
         // Load Pending Check-in Requests
         function loadPendingCheckIns() {
-            database.ref("checkInRequests").on("value", snapshot => {
-                const pendingList = document.getElementById("pendingCheckInList");
+            const pendingList = document.getElementById("pendingCheckInList");
+            onValue(ref(database, "checkInRequests"), snapshot => {
                 pendingList.innerHTML = "";
                 snapshot.forEach(child => {
                     let listItem = document.createElement("li");
@@ -134,8 +139,8 @@
 
         // Approve Check-in
         function approveCheckIn(guestName) {
-            database.ref("guests/" + guestName).update({ checkedIn: true });
-            database.ref("checkInRequests/" + guestName).remove();
+            update(ref(database, "guests/" + guestName), { checkedIn: true });
+            remove(ref(database, "checkInRequests/" + guestName));
             loadGuestList();
             loadPendingCheckIns();
         }
