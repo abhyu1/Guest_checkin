@@ -25,13 +25,17 @@ function adminLogin() {
   const password = document.getElementById("adminPassword").value;
   signInWithEmailAndPassword(auth, email, password)
     .then(() => {
-      document.getElementById("adminContainer").style.display = "block";
+      // Show admin panel after successful login
+      console.log("Admin login successful!");  // Check if login is successful
+      document.getElementById("adminContainer").style.display = "block";  
       loadGuestList();
       loadPendingCheckIns();
     })
-    .catch(error => alert(error.message));
+    .catch(error => {
+      console.log(error.message);  // Log error message for debugging
+      alert(error.message);
+    });
 }
-
 // Admin Logout
 function adminLogout() {
   signOut(auth).then(() => {
